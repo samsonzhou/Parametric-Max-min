@@ -1,0 +1,437 @@
+\section{Partitioning for Max-Min on a Tree}
+\label{sec:tree}
+In this section, we present an optimal algorithm to perform parametric search for the max-min problem on a graph that is a tree. 
+The algorithm differs from that in Section~\ref{sec:path} as either long paths or many leaves can overwhelm the running time, so we must simultaneously compress long paths and delete leaves.  
+The situation is further complicated by the challenge of handling \emph{problematic vertices}, which are vertices of degree greater than two. 
+Thus, we pursue a dual-pronged strategy that identifies both paths to compress and paths to delete. 
+
+\subsection{Our Tree Algorithm}
+Our algorithm proceeds through rounds, running an increasing number of selection and feasibility tests on each round. 
+As we shall show in Section \ref{sec:tree:analysis}, each round halves the feasibility test time, and the overall time for selection is linear. 
+Thus, our algorithm runs in linear time.
+
+For the purposes of discussion and analysis, we initially classify paths in the tree as either pending paths or processed paths, based on whether the actual weights associated with the path have already been resolved. 
+Let an \emph{internal path} be a subpath between the root and a problematic vertex, or between two problematic vertices such that all intermediate vertices are of degree $2$. 
+Let a \emph{leaf path} be a subpath with either the root or a problematic vertex as one endpoint and the other endpoint being a leaf. 
+Furthermore, let a \emph{processed path} be an internal path that is completely cleaned and glued and let a \emph{pending} path be a path, either an interval or a leaf path, that contains some value in the interval $(\lambda_1,\lambda_2)$. 
+Moreover, we define and classify paths or subpaths as light paths, middleweight paths, or heavy paths, based on how the actual weights in the path compare to $\lambda_1$ and $\lambda_2$. 
+A subpath is \emph{light} if its total weight is at most $\lambda_1$, and a subpath is \emph{heavy} if its total weight is at least $\lambda_2$. 
+Otherwise, a subpath is \emph{middleweight}. 
+Note that a middleweight path may consist of a sequence of both light and/or middleweight subpaths.
+
+For each round, our algorithm runs an increasing number of selection and feasibility tests, while maintaining three selection sets, $\mathcal{H}$, $\mathcal{U}$, and $\mathcal{V}$, consisting of candidates for the max-min value. 
+The first selection set is for heavy subpaths, the second is for middleweight paths formed as sequences of light or middleweight subpaths after the resolution of a problematic vertex, and the third is for handling problematic vertices whose leaf paths have been resolved. 
+We assign synthetic weights to values inserted into $\mathcal{H}$ or $\mathcal{U}$ as a function of the lengths of the corresponding paths, as defined in the procedure {\it mats\_for\_path} in Section~\ref{sec:path}, assuming that we round up the length to a power of $2$.  
+
+Our algorithm invokes a separate procedure to address each of these sets specifically. 
+Procedure {\it handle\_middleweight\_paths} inserts the total actual weight of each middleweight path as elements into $\mathcal{U}$. 
+Our algorithm then performs two weighted selections on the elements in $\mathcal{U}$, one using the length of each path as the weight, and the other using the synthetic weight of each path. 
+For each of the weighted selections, our algorithm then tests the selected value for feasibility, and adjusts $\lambda_1$ and $\lambda_2$ accordingly. 
+For any middleweight path that becomes heavy, our algorithm succinctly identifies the corresponding submatrix and inserts the representatives (of the submatrix) whose values are within $(\lambda_1,\lambda_2)$ into $\mathcal{H}$.
+For any path that becomes light, our algorithm cleans and glues the path, so that future feasibility tests require only polylogarithmic time to search the path.
+
+The second procedure, {\it handle\_pending\_paths}, selects the weighted and unweighted medians from $\mathcal{H}$ separately, tests each for feasibility, and adjusts $\lambda_1$ and $\lambda_2$ accordingly. 
+After the feasibility test, our algorithm cleans and glues adjacent subpaths that it has just resolved. 
+When a leaf path is completely resolved, our algorithm represents the leaf path by a single vertex with the remaining accumulated weight, $accum\_wgt(v)$, as described in Section~\ref{sec:prelims}. 
+Our algorithm defers until the next iteration of the for-loop the insertion into $\mathcal{H}$ of the representatives of any subpaths that have become heavy.
+
+The third procedure is {\it handle\_leaves}. 
+For any problematic vertex with a resolved leaf path hanging off it, the procedure inserts into $\mathcal{V}$ the sum of the weight of that vertex plus the accumulated remaining weight left over from the resolved leaf path. 
+The procedure then selects the median from $\mathcal{V}$, performs the feasibility test, and adjusts $\lambda_1$ and $\lambda_2$ accordingly. 
+Since we want to find the max-min, if the number of cuts is at least $k$, then for each vertex whose weight plus the accumulated remaining weight from the resolved leaf path is at most the median, our algorithm merges the vertex with the accumulated remaining weight from the resolved leaf path. 
+On the other hand, if the number of cuts is less than $k$, then for each vertex whose weight plus the accumulated remaining weight from the resolved leaf path is at least the median, our algorithm cuts below the parent vertex, because any future feasibility tests would do the same.  
+Furthermore, our algorithm assigns, to any middleweight path created by the resolution of a problematic vertex, a synthetic weight that is a function of the length (rounded up to a power of two) as defined in the procedure {\it mats\_for\_path} in Section~\ref{sec:path}. 
+Our algorithm then inserts the weight of that path into $\mathcal{U}$ at the beginning of the next invocation, along with the corresponding synthetic weight. 
+Note that we merge middleweight paths only when we know whether they will become light or heavy. 
+For the representative of any subpath that becomes heavy during this procedure, we wait until the next iteration of the for-loop to insert the representative into $\mathcal{H}$.
+
+We now give the top level of our algorithm. 
+We defer our discussion of the corresponding data structures until Section~\ref{sec:tree:structures}.
+\vskip 0.2in\noindent
+\sspace
+{\it TREE1}:\vspace{.05in} \\
+$\T $ Initialize the data structures for the algorithm and set round $r\leftarrow1$. \\
+$\T $ $\WH$ $\mathcal{H}\cup\mathcal{U}\cup\mathcal{V}\neq\emptyset$ $\DO$ \\
+%$\T \T $ $\FO$ three times $\DO$ \\
+%$\T \T \T $ Call procedure {\it handle\_middleweight\_paths} $163r+170$ times.\\
+%$\T \T \T $ Call procedure {\it handle\_pending\_paths} $163r+170$ times.\\
+$\T \T $ $\WH$ feasibility test time is more than $n/2^r$ $\DO$ \\
+$\T \T \T$ Call procedure {\it handle\_middleweight\_paths}.\\
+$\T \T \T$ $\REPEAT$ Call procedure {\it handle\_pending\_paths} \\
+$\T \T \T$ $\UNTIL$ the feasibility test time on heavy paths has been reduced by $50\%$ \\
+$\T \T \T \T$ $\AND$ the feasibility test time on leaf paths has been reduced by $25\%$ \\
+$\T \T \T$ Call procedure {\it handle\_leaves}.\\
+$\T \T $ $\EW$ \\
+$\T \T$ $r\leftarrow r+1$\\
+$\T $ $\EW$
+\bigskip
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Data Structures}
+\dspace
+\label{sec:tree:structures}
+As our algorithm progresses, it prunes the tree to delete some of the paths in the edge-path-partition and it glues together other paths, while updating the values of $\lambda_1$ and $\lambda_2$.
+In this section, we discuss the necessary data structures so that our algorithm can efficiently perform feasibility testing as these updates occur.
+
+Our algorithm represents a path in an edge-path-partition in consecutive locations of an array. 
+To achieve that, our algorithm initially stores the actual weights of the vertices of the tree in an array using the following order. 
+It orders the children of each vertex from left to right by nondecreasing height in the tree. 
+Using this organization of the tree, our algorithm then lists the vertices of the tree in postorder. 
+Our algorithm can find the heights of all vertices in linear time. 
+It can also order pairs containing parent and height lexicographically in linear time. 
+Our algorithm does this process only during the initialization phase. 
+It uses arrays that are parallel to the actual weight array to store pointer values, as well as the accumulated weight (see procedure \emph{explore} in Section~\ref{sec:prelims}), which it then uses to compute the actual weight of specified subpaths, exactly the same as the $last$, $ncut$, and $next$ arrays in Section~\ref{sec:path}.
+We discuss this additional information in due course.
+
+When our algorithm removes paths from the tree, it reorganizes the storage of the tree within the array as follows. 
+Let $P$ be a leaf-path in the edge-path-partition of the current tree, and let $t$ be the top vertex of $P$. 
+To remove $P-t$, we proceed as follows: 
+Let $P'$ be the path whose bottom vertex is $t$. 
+If $t$ will have only one child remaining after removal of $P-t$, and this child was originally not the rightmost child of $t$, do the following. 
+Let $P''$ be the other path whose top vertex is $t$. 
+Copy the vertices of $P''-t$ in order, so that the top vertex of this path is in the location preceding the location of $t$ in the array. 
+Modify the actual weight of $t$ by adding the remainder left from removing $P-t$. 
+Also, copy pointer values for all copied vertices into the new locations in their arrays. 
+That is, update $last$, $ncut$, and $next$ pointers in $P'$. 
+In particular, the $last$ pointer for the first vertex in $P'$ should now point to the last vertex in $P''$. 
+We should also copy and modify the accumulated weight, as we discuss shortly.
+
+Note that the bottom vertex of $P''$ may have been the parent of several vertices. 
+When $P''-t$ is moved, we do not copy the children of its bottom vertex (and subtrees rooted at them). 
+It is simple to store in a location formerly assigned to the bottom vertex of $P''$ the current location of this vertex, and to also store a pointer back. 
+If we copy the path containing $P''$, then we reset this pointer easily. 
+When only one child of the bottom vertex of $P''$ remains, we copy the corresponding path to in front of $P''$. 
+We claim that the total time to perform all rearrangements will be $O(n)$: 
+The time to copy each vertex and to copy and adjust its accumulated weight is constant. 
+Because of the way in which the tree is stored in the array, at most one vertex will be copied from any array location.
+
+We next discuss the representation of a heavy path. 
+Each heavy path $P$ is represented as a sequence of overlapping subpaths, each of actual weight at least $\lambda_2$. 
+Each vertex of $P$ is in at most two overlapping subpaths. 
+Each overlapping subpath, except the first, overlaps the previous overlapping subpath on vertices of total actual weight at least $\lambda_2$, and each overlapping subpath, except the last, overlaps the following overlapping subpath on vertices of total actual weight at least $\lambda_2$. 
+Thus any sequence of vertices of weight at most $\lambda_2$ that is contained in the path is contained in one of its overlapping subpaths. 
+For each overlapping subpath, we shall maintain a succinct version of the corresponding sorted matrix $M(P)$ (as described in Section~\ref{sec:prelims}), where $P$ is the overlapping subpath excluding the top vertex of the overlapping subpath.
+
+Initially, no path is heavy, since initially $\lambda_2=\infty$. 
+Our algorithm recognizes a path $P$ as heavy in one of two ways.
+\begin{enumerate}
+\item
+Path $P$ was middleweight until a feasibility test reduced the value of $\lambda_2$.
+\item
+Path $P$ results from the concatenation of two or more paths following the resolution of a problematic vertex.
+\end{enumerate}
+
+If a heavy path $P$ arises in the first way, then represent $P$ by two overlapping subpaths that are both copies of $P$, arbitrarily designating one as the first overlapping subpath and the other as the second. For each overlapping subpath, create the corresponding succinct description of a sorted matrix. 
+If heavy path $P$ is the concatenation of paths, all of which were light, then do the same thing.
+
+Otherwise, path $P$ results from the concatenation of paths, with at least one of them being heavy. 
+Do the following to generate the representation for $P$. 
+While there is a light or middleweight path $P'$ to be concatenated to a heavy path $P''$, combine the two as follows. If $P'$ precedes $P''$, then extend the first overlapping subpath of $P''$ to incorporate $P'$. 
+If $P'$ follows $P''$, then extend the last overlapping subpath of $P''$. 
+This completes the description of the concatenation of light or middleweight paths with heavy paths. 
+While there is more than one heavy path, concatenate adjacent heavy paths $P'$ and $P''$ as follows. 
+Assume that $P'$ precedes $P''$. Combine the last overlapping subpath of $P'$ with the first of $P''$. 
+Note that any vertex can be changed at most twice before it is in overlapping subpaths that are neither the first nor the last. 
+
+We now discuss how to perform efficient feasibility testing, given our representation of paths. 
+To efficiently search along paths, we maintain a second representation of paths as red-black balanced search trees. 
+In each tree, there will be a node $x$ for every vertex $v$ in the subpath. 
+Node $x$ contains two fields, $wt(x)$ and $ct(x)$. Field $wt(x)$ contains the sum of the actual weights of all vertices whose nodes are in the subtree rooted at $x$, and field $ct(x)$ will equal the number of nodes in the subtree rooted at $x$. 
+With this tree it is easy to search for a vertex $v$ in subpath $P$ such that $v$ is the first vertex in $P$ so that the sum of the actual weights to $v$ is at least a certain value, and to determine at the same time the position of $v$ in $P$. 
+This search takes time proportional to the logarithm of the length of $P$. 
+When two paths $P'$ and $P''$ need to be concatenated together, we merge the corresponding search trees in time proportional to the logarithm of the combined path length.
+
+Moreover, a problematic vertex also needs access to the accumulated actual weight of each of its subtrees. 
+Thus, we also maintain a linked list $child$, which points to all children of a vertex, if they exist. 
+When leaf paths become resolved, remove the pointer from the parent vertex, but since we do not move the locations of the other descending paths until only one remains, we do not need to change the pointers for the other children. 
+Thus, when we delete a leaf path, we update the subpaths and pointers accordingly, so that each subpath in the edge-path-partition remains in a contiguous block of memory.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Analysis of our Tree Algorithm}
+\label{sec:tree:analysis}
+The analysis of our algorithm is not obvious because techniques in Section~\ref{sec:path} force the synthetic weight of data structure $\mathcal{M}$ to decrease monotonically as our algorithm progresses, but neither $\mathcal{U}$ nor $\mathcal{H}$ individually have this property. 
+Moreover, neither $\mathcal{U}$ nor $\mathcal{H}$ alone provides an accurate count of the number of resolved paths. 
+
+In a feasibility test, our algorithm must explore problematic vertices as well as both processed and pending paths. 
+Specifically, the feasibility test time is the number of vertices our algorithm lands on in pending paths, plus the number of vertices our algorithm lands on in processed paths, plus the number of problematic vertices. 
+Since leaf paths are pending paths, and the number of problematic vertices is less than the number of leaf paths, the feasibility test time is upper bounded by double the number of vertices our algorithm lands on in both pending and processed paths.
+Thus, we show an upper bound on the time spent by the feasibility test after each round. 
+Finally, we show that our algorithm needs at most $66(r^2+9)$ iterations to cut in half the feasibility test time.
+
+We remark that cleaning and gluing will be the same as in Section~\ref{sec:path} since our algorithm performs cleaning and gluing only along subpaths that were initially created as part of the edge-path-partition or along heavy paths, for which we would have a corresponding submatrix. 
+
+To analyze the performance of our algorithm, we consider, in an auxiliary data structure $\mathcal{P}$, the representatives of heavy and middleweight subpaths of the tree, along with their corresponding synthetic weights as a function of their lengths (as defined in Section~\ref{sec:prelims}). 
+When we resolve a problematic vertex, the {\it handle\_leaves} routine produces a newly formed path that is either a light path, a heavy path, or a middleweight path. 
+Recall that if a newly formed subpath is middleweight, we insert a representative consisting of actual weight of that subpath into $\mathcal{U}$. 
+If a newly formed subpath is heavy, we generate our succinct representation of its corresponding submatrix, and we insert the representatives of the submatrix into $\mathcal{H}$. 
+In each case, we also insert the representative(s) into $\mathcal{P}$ with their same synthetic weights, as described earlier. 
+Furthermore, at the beginning of each iteration, $\mathcal{P}$ includes exactly $\mathcal{H}$, $\mathcal{U}$, and the representatives of middleweight subpaths of paths represented in $\mathcal{U}$. 
+For convenience in analysis, let $n$ be the smallest power of two greater than the number of vertices in the graph. 
+We now consider $\mathcal{P}$ to show results analogous to Lemma \ref{lem:3:2} and Lemma \ref{lem:3:3}.
+
+\begin{lemma}
+\label{lem:weight:bound}
+At any point in our algorithm, the total synthetic weight of the values in $\mathcal{P}$ is less than $(4/3)*4n^5$.
+\end{lemma}
+\begin{proof}
+Consider the synthetic weights assigned to the representative values in $\mathcal{P}$. 
+Even if all representatives in $\mathcal{P}$ represent heavy paths, 
+procedure {\it mats\_for\_path} creates
+at most $n$ submatrices for subpaths of length $1$,
+at most $n/2$ more submatrices for subpaths of length $1$,
+at most $n/4$ submatrices for subpaths of length $2$, and so on,
+up to at most one submatrix for a subpath of length $n/2$, 
+corresponding to subpaths of lengths $1, 2, 4, \ldots , n$.
+The total synthetic weight of the representative values corresponding to each heavy path length is at most
+$4n^5, n^5, n^5/4, \ldots , 4n^3$, resp.
+If a path is middleweight, no submatrix is generated for the path, but by construction, its 
+representative value in $\mathcal{P}$ has the same synthetic weight as it would if the path were heavy.  
+Thus, the total synthetic weight in $\mathcal{P}$ is less than $(4/3)*4n^5$.
+\end{proof}
+
+In Section~\ref{sec:tree} we defined functions $wgt$ and {\it eff\_wgt} on matrices to analyze the progress of our algorithm. 
+We use a similar analysis in this section, but we do not have submatrices for middleweight paths. 
+To emphasize the parallels, we overload the definitions of $wgt$ and {\it eff\_wgt}, as defined below. 
+Let $wgt(P)$ be the synthetic weight assigned to subpath $P$, as a function of its length, as defined in Section~\ref{sec:prelims}. 
+Define the {\it effective weight},
+denoted {\it eff\_wgt}$(P)$, of a subpath $P$ containing a representative value in $\mathcal{P}$
+to be $wgt(P)$ if both its smallest value and largest value
+are contained in the interval $(\lambda_1, \lambda_2)$
+and $(3/4)wgt(P)$ if only one of its smallest value and largest value
+is contained in the interval $(\lambda_1, \lambda_2)$. 
+We analyze our algorithm using this notion of {\it eff\_wgt}$(P)$ without ever the need to explicitly calculate it. 
+Let {\it eff\_wgt}$(\mathcal{P})$ be the total effective weight of all subpaths with representative values in $\mathcal{P}$.
+
+\begin{lemma}
+\label{lem:selection:reduction}
+A weighted and unweighted selection, first both from $\mathcal{U}$ and then both from $\mathcal{H}$, resolves at least $1/24$ of {\it eff\_wgt}$(\mathcal{P})$
+\end{lemma}
+\begin{proof}
+When a feasibility test renders a value (the smallest or largest)
+from a heavy subpath $P$ no longer in the interval $(\lambda_1, \lambda_2)$,
+we argue that {\it eff\_wgt}$(P)$ is reduced by at least $wgt(P)/4$
+because of that value.
+
+If both values were contained in the interval $(\lambda_1, \lambda_2)$,
+but one no longer is, then clearly {\it eff\_wgt}$(P)$ is reduced by at least $wgt(P)/4$.
+If only one value was contained in the interval $(\lambda_1, \lambda_2)$,
+and it no longer is, then we consider whether $\lambda_1$ increased or $\lambda_2$ decreased. 
+If $\lambda_1$ increased and $P$ has no value within $(\lambda_1, \lambda_2)$, then any subpath will also 
+have no value within $(\lambda_1, \lambda_2)$. 
+Thus, {\it eff\_wgt}$(P)$ is clearly reduced by at least $wgt(P)/4$. 
+On the other hand, if $\lambda_2$ decreased so that $P$ is now a heavy path, then we generate $M(P)$. 
+We then replace $M(P)$ with the succinct description of four submatrices of effective weights $wgt(P)/8 + wgt(P)/8 + (3/4)wgt(P)/8 + (3/4)wgt(P)/8$ $< wgt(P)/2$, so that there is a reduction in weight by greater than $wgt(P)/4$.
+If both values from the submatrix were contained in the interval $(\lambda_1, \lambda_2)$,
+and both no longer are, then we consider first one and then the other.
+
+Thus every representative that was in $(\lambda_1, \lambda_2)$ but no longer is causes a decrease in {\it eff\_wgt}$(\mathcal{P})$ by an amount at least equal to its synthetic weight in $\mathcal{P}$.
+Representatives with more than half of the total weight in $\mathcal{P}$ find themselves no longer in $(\lambda_1, \lambda_2)$.
+
+Recall that we include values representing a subpath $P$ in selection set $\mathcal{H}$ if and only if $P$ is a heavy subpath, and the corresponding values are contained within $(\lambda_1, \lambda_2)$. 
+Of a subpath $P$ that does have representative values contained in $\mathcal{H}$, then $P$ has either two values in $\mathcal{P}$ at a total of $2wgt(P)/4 = (1/2)wgt(P)$ or one value at a weight of $wgt(P)/4 = (1/3)(3wgt(P)/4)$. 
+For each selection and feasibility test from $\mathcal{H}$ and $\mathcal{U}$, at least half of the weight of $\mathcal{P}$ is contained in $\mathcal{U}$ or contained in $\mathcal{H}$. 
+
+Suppose at least $1/2$ of $\mathcal{P}$ is contained in $\mathcal{U}$. 
+Then following a selection and feasibility test from $\mathcal{U}$, at least $(1/2)(1/2)=1/4$ of the weight of $\mathcal{P}$ will be removed from $\mathcal{U}$, either determined to be smaller than an updated $\lambda_1$, or larger than an updated $\lambda_2$ and inserted into $\mathcal{H}$ as a part of a heavy subpath. 
+Then, following a round of selection and feasibility testing from $\mathcal{H}$, the weight of $\mathcal{P}$ is reduced by at least $(1/2)(1/4)=1/8$.
+
+On the other hand, if there is more weight of $\mathcal{P}$ in $\mathcal{H}$ than in $\mathcal{U}$, then a round of selection and feasibility testing 
+from $\mathcal{H}$ decreases the weight of $\mathcal{P}$ by at least $(1/2)(1/2)=1/4$.
+
+Thus, in the worse of the two cases, the weight of $\mathcal{P}$ decreases by at least $(1/8)(1/3) = 1/24$ per iteration.
+\end{proof}
+
+\begin{lemma}
+\label{lem:resolved:paths}
+Following $i$ iterations of weighted and unweighted selection and feasibility testing for $\mathcal{H}$, where $2^{5j}=(3/4)*(24/23)^i$, at most $1/2^{5k}$ of the subpaths, of length $2^{j-k}$, represented by values in $\mathcal{H}$ can be pending. (Recall that a pending path is defined to contain some value that is not resolved.)
+\end{lemma}
+We omit the proof of Lemma~\ref{lem:resolved:paths}, as it is essentially contained in the proof of Lemma~\ref{lem:3:2}, with $24/23$ replacing $6/5$.
+
+\begin{lemma}
+\label{lem:heavy:submatrices}
+The total time to generate and maintain the overlapping subpaths and thus, the representatives of the corresponding submatrices for all the heavy subpaths is $O(n)$.
+\end{lemma}
+\begin{proof}
+Recall that each vertex can be in at most two overlapping subpaths, so the total time for generating the representatives of the corresponding submatrices for all heavy subpaths is at most $2n$. 
+\end{proof}
+
+\begin{theorem}
+\label{thm:selection}
+The time for inserting, selecting, and deleting representatives of $\mathcal{H}$ and $\mathcal{U}$ across all iterations is $O(n)$.
+\end{theorem}
+\begin{proof}
+First, we count the number of representatives inserted into $\mathcal{H}$.
+Initially, at most $2n-1$ subpaths have representatives in $\mathcal{H}$. 
+For $j = 1, 2, \ldots,\log n - 1$, consider all subpaths of length $2^j$ that at some point have representatives in $\mathcal{H}$. 
+A path that can be split must have its smallest value at most $\lambda_2$ and its largest value at least $\lambda_1$. 
+Note that light paths are not split further, while heavy paths are represented succinctly by submatrices. 
+However, $M_{i,j}>M_{i-k,j+k}$ for $k>0$, since the heavy path represented by $M_{i-k,j+k}$ is a subpath of the path represented by $M_{i,j}$. 
+Hence, for any submatrix of size $2^j\times 2^j$ which is split, at most one submatrix can be split in each diagonal extending upwards from left to right. 
+There are fewer than $2n$ diagonals, so there will be fewer than $2(n/2^j)$ submatrices that are split. 
+Thus the number of submatrices resulting from quartering is less than $8(n/2^j)$. 
+Summing over all $j$ gives $O(n)$ insertions into $\mathcal{H}$ overall.
+
+Next, we count the number of representatives inserted into $\mathcal{U}$. 
+There are at most $n$ subpaths of length $1$, $n/2$ subpaths of length $2$, and so forth, up to at most $1$ path of length $n$. 
+Since we insert a representative of each subpath at most once into $\mathcal{U}$, the number of representatives inserted into $\mathcal{U}$ is $O(n)$.
+
+Finally, we show that the total selection time from $\mathcal{H}$ and $\mathcal{U}$ is linear in $n$. 
+We give an accounting argument similar to that used in the proof of Lemma~\ref{lem:3:3}. 
+Charge $2$ credits for each value inserted into $\mathcal{H}$ or $\mathcal{U}$. 
+As $\mathcal{H}$ and $\mathcal{U}$ change, we maintain the invariant that the number of credits is twice the size of $\mathcal{H}$ or $\mathcal{U}$, respectively. 
+The rest of the proof is analogous to that of Lemma~\ref{lem:3:3}.
+Thus, we conclude that the time for performing selection is $O(n)$.
+\end{proof}
+
+\noindent
+We make the following observations: The time spent by the feasibility test on a pending path is at least as much time as spent by the feasibility test as if the pending path were a processed path. Resolving a processed path does not increase the feasibility test time spent on pending paths. 
+Based on these observations, we note that the feasibility test time spent on pending paths cannot increase and once all pending paths are resolved, the time spent on processed paths cannot increase.
+We analyze our algorithm in each of the following three exhaustive cases:
+\begin{enumerate}
+\item
+Lemma~\ref{lem:pending:paths}: The feasibility test spends more time on heavy paths than middleweight paths and at least as much time on pending paths as on processed paths.
+\item
+Lemma~\ref{lem:processed:paths}: The feasibility test spends more time on heavy paths than middleweight paths and more time on processed paths than pending paths.
+\item
+Lemma~\ref{lem:m:r}: The feasibility test spends at least as much time on middleweight paths as on heavy paths.
+\end{enumerate}
+
+\begin{lemma}
+\label{lem:pending:paths}
+Suppose at the beginning of round $r$, that the feasibility test lands on at most $n/2^{r-1}$ vertices. Suppose further that the feasibility test lands on more vertices in heavy paths than middleweight paths. If the feasibility test also lands on at least as many vertices in pending paths as vertices in processed paths, then following at most $163r+170$ iterations of selection and feasibility testing from $\mathcal{H}$, the number of vertices in pending paths that the feasibility test lands on is either halved or at most $n/2^{r+2}$.
+\end{lemma}
+\begin{proof}
+By assumption, the feasibility test lands on at most $n/2^{r-1}$ vertices and lands on more vertices in heavy paths than middleweight paths, and at least as many vertices in pending paths as vertices in processed paths. 
+If the number of vertices in pending paths that the feasibility test lands on is at most $n/2^{r+2}$, then the result follows. 
+Thus, we assume the feasibility test lands on more than $n/2^{r+2}$ vertices in pending paths. 
+By Lemma \ref{lem:resolved:paths}, in iteration $i$, at most $1/2^{5k}$ of the subpaths of length $2^{j-k}$ can be pending, where $2^{5j}=(3/4)*(24/23)^i$. 
+Then for $j=2r+2$ and $k=r$, at most $1/2^{5r}$ of the subpaths of length $2^{(r+2)}$ can be pending, so there are at most $n/2^{5r}$ vertices remaining in pending paths. 
+Thus, it takes at most $i=(5(2r+2)-\log(3/4))/\log(24/23)<163r+170$ iterations of selection and feasibility testing from $\mathcal{H}$ to reduce the amount of time spent on the pending paths by at least half. 
+Since each iteration of feasibility testing lands on at most $n/2^{r-1}$ vertices, the total number of vertices checked is at most $\left(n/2^{r-1}\right)(163r+170)$.
+\end{proof}
+
+\noindent
+Before we can show an analogous result for processed paths, we introduce three preliminary lemmas.
+
+\begin{lemma}
+\label{lem:processed:time}
+If a feasible lands on at least $t$ vertices in a processed path $P$, then $P$ has length at least $2^{\sqrt{t/2}}$.
+%Let $P$ be a processed path of length at most $2^l$. Then a feasibility test lands on at most $2l^2$ vertices in $P$.
+\end{lemma}
+\begin{proof}
+Suppose $P$ has length less than $2^{\sqrt{t/2}}$. 
+From the edge-path-partition, $P$ can contain disjoint subpaths of lengths $1,2,2^2,\ldots,2^{\sqrt{t/2}-1}$. 
+However, if $P$ previously contained a problematic vertex, then it may have two disjoint subpaths of each length. 
+Thus, the feasibility test lands on at most $2(1+2+\ldots+\sqrt{t/2}-1)=(\sqrt{t/2}-1)\sqrt{t/2}<t$ vertices in total in $P$, which is a contradiction.
+\end{proof}
+
+\begin{lemma}
+\label{lem:median:leaf}
+Suppose a feasibility test lands on at most $n/2^r$ vertices but more than $n/2^{r+2}$ vertices. If the feasibility test spends more time on processed paths than pending paths, then the median length of leaf paths is at most $\max(2^{4r^2},2^{400})$.
+\end{lemma}
+\begin{proof}
+Suppose, by way of contradiction, the median length of a leaf path is more than $2^{4r^2}$ and $r>10$. 
+Let $x$ be the mean number of vertices the feasibility test lands on, across all leaf paths, so that $4r^2<x$. 
+Let $t$ be the mean number of vertices the feasibility test lands on, across all processed paths. 
+Recall that all leaf paths are pending paths. 
+By assumption, the feasibility test spends more time on processed paths than pending paths. 
+Moreover, the number of leaf paths is more than the number of internal paths, pending or processed, so that $t>x$. 
+By Lemma~\ref{lem:processed:time}, each processed path in which the feasibility test lands on at least $t$ vertices has length is at least $2^{\sqrt{t/2}}$. 
+Thus, if $x\le 2^r$, then by considering the pending paths, the ratio of the time spent by the feasibility test to the total number of vertices is at most $\frac{x}{2^{4r^2}}<\frac{1}{2^{r+2}}$, which contradicts the assumption that the feasibility test lands on more than $n/2^{r+2}$ vertices.
+On the other hand, if $x>2^r$, then by considering the processed paths, the ratio of the time spent by the feasibility test to the total number of vertices is at most $\frac{x+t}{2^{4r^2}+2^{\sqrt{t/2}}}<\frac{2t}{2^{\sqrt{t/2}}}<\frac{1}{2^{r+2}}$ for $r\ge10$, since $t>x>2^r$. 
+This again contradicts the assumption that the feasibility test lands on more than $n/2^{r+2}$ vertices.
+Thus, the median length of a leaf path is at most $\max(2^{4r^2},2^{400})$.
+\end{proof}
+
+\noindent
+For the remainder of the section, we analyze $r\ge10$, noting that for $r<10$, the median length of a leaf path is at most $2^{400}$ and can be handled in a constant number of feasibility tests.
+\begin{lemma}
+\label{lem:median:processed}
+Suppose the feasibility test lands on at most $n/2^r$ vertices but more than $n/2^{r+1}$ vertices. Suppose further that the feasibility test lands on more vertices in heavy paths than middleweight paths. If the feasibility test spends more time on processed paths than pending paths, then the median length of processed paths is at most $2^{r^2+9}$. Hence, the number of vertices the feasibility test lands on in a median length processed path is at most $2(r^2+9)^2$.
+\end{lemma}
+\begin{proof}
+Suppose, by way of contradiction, the median length of processed paths is more than $2^{r^2+9}$. 
+Then by Lemma \ref{lem:processed:time}, the number of vertices in processed paths that the feasibility test lands on is at most $\left(2(r^2+9)^2/2^{r^2+9}\right)n$. 
+By assumption, the feasibility test spends more time on heavy paths than middleweight paths, and more time on processed paths than pending paths, so the number of vertices in processed paths that the feasibility test lands on is at least $n/2^{r+2}$. 
+But for all positive integers $i$, it holds that $1/2^{i+2}>2(i^2+9)/2^{i^2+9}$. Thus, $n/2^{r+2}>\left(2(r^2+9)^2/2^{r^2+9}\right)n$, which contradicts the assumption that the feasibility test lands on more than $n/2^{r+1}$ vertices. 
+Hence, the median length of a processed path is at most $2^{r^2+9}$.
+\end{proof}
+
+\noindent
+We are now ready to show the reduction in processed paths from repeated instances of feasibility testing.
+
+\begin{lemma}
+\label{lem:processed:paths}
+Suppose at the beginning of round $r$, that the feasibility test lands on at most $n/2^{r-1}$ vertices. 
+Suppose further that the feasibility test lands on more vertices in heavy paths than middleweight paths. 
+If the feasibility test lands on more vertices in processed paths than vertices in pending paths, then following at most $6(r^2+9)(408r^2+815r+415)$ iterations of selection and feasibility testing from $\mathcal{H}$, which takes $O(nr^4/2^r)$ time, the number of vertices in processed paths that the feasibility test lands on is either halved or at most $n/2^{r+2}$.
+\end{lemma}
+\begin{proof}
+By assumption, the feasibility test lands on at most $n/2^{r-1}$ vertices and lands on more vertices in heavy paths than middleweight paths, and more vertices in processed paths than vertices in pending paths. 
+If the number of vertices in processed paths that the feasibility test lands on is at most $n/2^{r+2}$, then the lemma immediately follows. 
+Thus, we assume the feasibility test lands on more than $n/2^{r+2}$ vertices in processed paths.
+
+By Lemma \ref{lem:median:leaf}, the median length of a leaf path is at most $2^{4(r-1)^2}$. 
+By Lemma \ref{lem:resolved:paths}, in iteration $i$, at most $1/2^{5k}$ of the subpaths of length $2^{j-k}$ can be pending, where $2^{5j}=(3/4)(24/23)^i$. 
+Then for $j=5(r+1)^2$ and $k=(r+1)^2$, at most $1/2^{5(r+1)^2}$ of the subpaths of length $2^{4(r+1)^2}>2^{4(r-1)^2}$ can be pending, so at least half of the leaf paths are resolved. 
+It takes at most $i=(25(r+1)^2-\log(3/4))/\log(24/23)<408r^2+815r+414$ iterations to resolve half of the leaf paths, so that the appropriate values can be inserted into $\mathcal{V}$. 
+One more iteration of feasibility testing is run using the selected median from $\mathcal{V}$. 
+Thus, running at most $408r^2+815r+414$ iterations of {\it handle\_pending\_paths}, followed by an iteration of {\it handle\_processed\_paths}  (for a total of at most $408r^2+815r+415$ iterations) reduces the number of leaf paths by a factor of $1/4$, or equivalently, reduces the total number of paths by a factor of $1/8$.
+
+Since $(7/8)^6<1/2$, then by repeating at most $6(r^2+9)$ times, the total number of paths is reduced by a factor of at least $1/2^{r^2+9}$. 
+If the average length of the remaining processed paths is more than $2^{r^2+9}$, then by Lemma \ref{lem:median:processed}, the feasibility test lands on at most $n/2^{r+1}$ vertices, which is a reduction of $1/2>1/4$ in the number of vertices checked by the feasibility test. 
+Otherwise, if the average length of the remaining processed paths is less than $2^{r^2+9}$, then by reducing the total number of paths by factor of at least $1/2^{r^2+9}$, the time spent by the feasibility test on vertices in processed paths is at least halved. 
+We require at most $6(r^2+9)$ cycles, each with $408r^2+815r+415$ iterations of feasibility testing. 
+Thus, at most $6(r^2+9)(408r^2+815r+415)=O(r^4)$ iterations are needed to reduce the feasibility test by at least half, each checking at most $n/2^r$ vertices, for a total of $O(nr^4/2^r)$ time.
+\end{proof}
+
+\begin{lemma}
+\label{lem:m:r}
+For each round, the feasibility test time is reduced by at least $1/2$. 
+Thus at the beginning of round $r$, the feasibility test lands on at most $n/2^{r-1}$ vertices.
+\end{lemma}
+\begin{proof}
+We note that prior to the first round, the feasibility test lands on exactly $n$ vertices, and we proceed via induction. 
+Suppose at the beginning of round $r$, the feasibility test lands on at most $n/2^{r-1}$ vertices. 
+If the feasibility test in fact lands on at most $n/2^r$ vertices, then the induction already holds. 
+Recall that we have three cases, as we claimed just before Lemma~\ref{lem:pending:paths}. 
+The feasibility test can spend at least as much time on middleweight paths as on heavy paths. 
+Otherwise, the feasibility test spends more time on heavy paths than middleweight paths, but can spend more time on either pending paths or processed paths.  
+
+If the feasibility test spends at least as much time on pending paths as on processed paths, then by Lemma \ref{lem:pending:paths}, no more than $163r+170$, which is certainly less than $408r^2+815r+415$, iterations of selection and feasibility from $\mathcal{H}$ are needed to reduce the portion spent by the feasibility test on pending paths by at least half. 
+Hence, the overall feasibility test time is reduced by at least $1/8$.
+
+Otherwise, if the feasibility test spends more time on processed paths than pending paths, then by Lemma \ref{lem:processed:paths}, at most $(6r^2+9)(408r^2+815r+415)$ iterations of selection and feasibility from $\mathcal{H}$ are needed to reduce the portion spent by the feasibility test on processed paths by at least half. 
+Hence, the overall feasibility test time is reduced by at least $1/8$.
+
+If the feasibility test spends at least as much time on middleweight paths as on heavy paths, then following a selection in $\mathcal{U}$ that is weighted by path length, and then a feasibility test, at least half the vertices in middleweight paths will be determined to be either in light paths or in heavy paths. 
+If the vertices are determined to be in light paths, then the portion spent by the feasibility test on these paths is reduced by at least half, since newly formed light paths are cleaned and glued in \emph{handle\_middleweight\_paths}, without increasing the time spent by the feasibility test on heavy paths. 
+Hence, if $\lambda_1$ is increased by a feasibility test from $\mathcal{U}$, the overall feasibility test time is reduced by at least $1/8$. 
+
+However, if the vertices are determined to be in heavy paths, our algorithm will insert the representatives of the corresponding submatrices into $\mathcal{H}$. 
+Our algorithm thus reduces the portion spent by the feasibility test on heavy paths by at least $1/8$.
+Hence, taking the reductions of both types into account, the overall feasibility test time is reduced by at least $1/16$.
+Thus, we can reduce the overall number of vertices that the feasibility test lands on by $1/16$ in $O(nr^4/2^r)$ time, for each $r$. 
+Since $(15/16)^{11}<1/2$, then at most eleven repetitions suffice to halve the overall number of vertices checked by the feasibility test. 
+Indeed, each round requires at most $11[6(r^2+9)]=66(r^2+9)$ repetitions, and so at the beginning of round $r+1$, the runtime is at most $n/2^r$.
+\end{proof}
+
+\begin{corollary}
+\label{cor:total:calls}
+Round $r$ has $O(r^4)$ calls to the feasibility test. 
+\end{corollary}
+\begin{proof}
+Since round $r$ requires at most $66(r^2+9)$ repetitions of the inner loop, and the inner loop uses at most $(408r^2+815r+415)$ feasibility tests, then the total number of feasibility tests in round $r$ is $O(r^4)$.
+\end{proof}
+
+\noindent
+Now, we claim the main result of paper.
+
+\begin{theorem}
+The runtime of our algorithm is $O(n)$.
+\end{theorem}
+\begin{proof}
+By Lemma \ref{lem:m:r}, the feasibility test lands on at most $n/2^{r-1}$ vertices at the beginning of round $r$. 
+By Corollary \ref{cor:total:calls}, round $r$ has $O(r^4)$ calls to the feasibility test, which take $O(n/2^{r-1})$ time each.
+Hence, there are at most $\log n$ rounds. 
+Note that $\sum_{r=0}^{\log n} nr^4/2^{r-1}$ is $O(n)$. By Theorem \ref{thm:selection}, the total time for handling $\mathcal{H}$ and $\mathcal{U}$ and performing selection over all iterations is $O(n)$, while the same result clearly holds for $\mathcal{V}$. 
+Therefore, the total time required by our algorithm is $O(n)$.
+\end{proof}

@@ -1,0 +1,93 @@
+\begin{thebibliography}{10}
+
+\bibitem{AP}
+E.~M. Arkin and C.~H. Papadimitriou.
+\newblock On the complexity of circulations.
+\newblock {\em J. Algorithms}, 7:134--145, 1986.
+
+\bibitem{BPS}
+R.~I. Becker, Y.~Perl, and S.~R. Schach.
+\newblock A shifting algorithm for min-max tree partitioning.
+\newblock {\em J. ACM}, 29:58--67, 1982.
+
+\bibitem{BFPRT}
+M.~Blum, R.~W. Floyd, V.~R. Pratt, R.~L. Rivest, and R.~E. Tarjan.
+\newblock Time bounds for selection.
+\newblock {\em J. Comput. Syst. Sci.}, 7:448--461, 1972.
+
+\bibitem{C1}
+R.~Cole.
+\newblock Partitioning point sets in arbitrary dimensions.
+\newblock {\em Theor. Comput. Sci.}, 49:239--265, 1987.
+
+\bibitem{C2}
+R.~Cole.
+\newblock Slowing down sorting networks to obtain faster sorting algorithms.
+\newblock {\em J. ACM}, 34:200--208, 1987.
+
+\bibitem{CSSS}
+R.~Cole, J.~S. Salowe, W.~L. Steiger, and E.~Szemeredi.
+\newblock An optimal-time algorithm for slope selection.
+\newblock {\em SIAM J. Comput.}, 18:792--810, 1989.
+
+\bibitem{FTR}
+G.~N. Frederickson.
+\newblock Optimal algorithms for partitioning trees and locating $p$ centers in
+  trees.
+\newblock {\em Technical Report CSD-TR-1029, Purdue University}, 1990.
+
+\bibitem{F1}
+G.~N. Frederickson.
+\newblock Optimal algorithms for tree partitioning.
+\newblock In {\em Proc. 2nd ACM-SIAM Symp. on Discrete Algorithms}, pages
+  168--177, San Francisco, January 1991.
+
+\bibitem{FJ1}
+G.~N. Frederickson and D.~B. Johnson.
+\newblock Finding $k$th paths and $p$-centers by generating and searching good
+  data structures.
+\newblock {\em J. Algorithms}, 4:61--80, 1983.
+
+\bibitem{FJ2}
+G.~N. Frederickson and D.~B. Johnson.
+\newblock Generalized selection and ranking: sorted matrices.
+\newblock {\em SIAM J. on Computing}, 13:14--30, 1984.
+
+\bibitem{Gu}
+D.~Gusfield.
+\newblock Parametric combinatorial computing and a problem of program module
+  distribution.
+\newblock {\em J.ACM}, 30:551--563, 1983.
+
+\bibitem{KM}
+S.~Kundu and J.~Misra.
+\newblock A linear tree partitioning algorithm.
+\newblock {\em SIAM J. on Computing}, 6:151--154, 1977.
+
+\bibitem{M}
+N.~Megiddo.
+\newblock Applying parallel computation algorithms in the design of serial
+  algorithms.
+\newblock {\em J. ACM}, 30:852--865, 1983.
+
+\bibitem{PS}
+Y.~Perl and S.~R. Schach.
+\newblock Max-min tree partitioning.
+\newblock {\em J. ACM}, 28:5--15, 1981.
+
+\bibitem{R}
+M.~Reichling.
+\newblock On the detection of a common intersection of k-convex polyhedra.
+\newblock {\em Lect. Notes Comput. Sci.}, 333:180--187, 1988.
+
+\bibitem{S}
+J.~S. Salowe.
+\newblock L-infinity interdistance selection by parametric search.
+\newblock {\em Inf. Proc. Lett.}, 30:9--14, 1989.
+
+\bibitem{Z}
+E.~Zemel.
+\newblock A linear time randomizing algorithm for searching ranking functions.
+\newblock {\em Algorithmica}, 2:81--90, 1987.
+
+\end{thebibliography}

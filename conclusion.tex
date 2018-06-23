@@ -1,0 +1,13 @@
+\section{Conclusion}
+Our algorithms solve the max-min and min-max path $k$-partition problems, as well as the max-min tree $k$-partition problem in asymptotically optimal time. 
+Consequently, they use the paradigm of parametric search without incurring any $\log$ factors. 
+We avoid these $\log$ factors by searching within collections of candidate values that are implicitly encoded as matrices or as single values. 
+We assign synthetic weights for these values based on their corresponding path lengths so that weighted selections favor the early resolution of shorter paths, which will speed up subsequent feasibility tests. 
+In fact, our analysis relies on demonstrating a constant fraction reduction in the feasibility test time as the algorithm progresses. 
+Simultaneously, unweighted selections quickly reduce the overall size of the set of candidate values so that selecting test values is also achieved in linear time. 
+
+Furthermore, we have successfully addressed the challenge of developing a meaningful quantity to track progress as the algorithm proceeds. 
+We have proved that the time to perform a feasibility test describes in a natural way the overall progress from the beginning of the algorithm. 
+Unfortunately, even these observations alone are not enough to overcome the challenges of tree partitioning. 
+In particular, without both compressing long paths and pruning leaf paths quickly, the feasibility test time might improve too slowly for the overall algorithm to take linear time. 
+Our dual-pronged strategy addresses both issues simultaneously, demonstrating that parallel algorithms are not essential or even helpful in designing optimal algorithms for certain parametric search problems.

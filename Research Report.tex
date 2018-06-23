@@ -1,0 +1,163 @@
+\documentclass[12pt]{article}
+\usepackage[dvips]{graphics,color}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage{setspace}
+
+\begin{document}
+%\doublespacing
+\begin{spacing}{3}
+\newpage
+\noindent
+\textbf{Description:} 
+Given a tree $T$ with $n$ vertices, take the edge-path-partition of $T$ and remove all vertices with degree more than two. Take each subpath and extend the length to the smallest possible power of two by adding in vertices with vertex weight zero, as necessary. For each subpath $p_i$, create an associated matrix, and insert into selection list $L$ with weight $(1/2)^{\log_2 l_i}4n^4$, where $l_i$ is the length of path $p_i$. For each subpath, repeatedly split the subpath, and insert the associated matrices into $L$ with twice the weight of the previous weight.
+\newline\noindent
+\textbf{Phase 1:} Repeatedly select the weighted median from $L$ for feasibility testing and adjust $\lambda_1$ and $\lambda_2$ accordingly until half of the leaf paths have been resolved. In this case, the remaining weight for those leaf paths is known, so they can be represented by a single vertex. During the feasibility testing, glue and clean adjacent subpaths which have been resolved.
+\vskip 0.2in\noindent
+\textbf{Phase 2:} Once at least half of the leaf paths have been resolved, for any vertex with resolved leaf paths, insert the appropriate value into selection list $L_2$. 
+\begin{itemize}
+\item For the max-min problem, the appropriate value is the median of the weights of the resolved leaf paths
+\item For the min-max problem, the value is $w_0+\sum_{w_v\le w_m}w_v$, where $w_m$ is the median.
+\end{itemize}
+Select the median from $L_2$ for feasibility testing and adjust $\lambda_1$ and $\lambda_2$ accordingly. Then half of the representative vertices will be resolved. Since at least half of the leaf paths are represented by singleton vertices at the end of the first phase, at least $1/4$ of the leaf paths are resolved following this stage. If any vertices with degree more than two are fully resolved in this phase, we insert the corresponding subpaths into $L$ with the appropriate weight. Return to Phase $1$. 
+
+
+%\textbf{Lemma:} The time needed to clean and glue adjacent paths of length $m$ and length $l$ is at most four times the time needed to resolve the longer of the two paths.
+%\vskip 0.2in\noindent
+%\textbf{Proof:} Without loss of generality, let $m\ge l$. Furthermore, assume that both $m$ and $l$ are powers of two. After each individual path is glued, the merged path of length $m+l$ must be cleaned. A representative matrix for this path must be created, but in order to repeatedly split the matrix into four submatrices, the dimensions of the matrix must be a power of two, so $m+l$ does not suffice. Instead, extend the path to length $2m$ by inserting $m-l$ vertices with vertex weight zero, and use the representative matrix with dimension $2m$. Thus, the representative matrix contains $4m^2$ elements, which is four times the $m^2$ elements appearing in the representative matrix of the path of length $m$, and so the worst case time needed to clean and glue adjacent paths of length $m$ and length $l$ is at most four times the worst case time needed to resolve the longer of the two paths.
+%
+%\newpage
+%\begin{enumerate}
+%\item Partition tree into subpaths lengths powers of $2$ from the root vertex, taking the largest length possible
+%\item For each subpath, create an associated matrix, insert into $L$ with weight $4n^4$
+%\item For each subpath, repeatedly split the subpath, and insert associated matrix into $L$ with twice the weight of the previous weight
+%\item For any vertex with resolved leaf paths, insert the appropriate value into $L_2$ with weight equal to number of resolved leaf paths
+%\begin{enumerate}
+%\item For the max-min problem, the appropriate value is the median of the weights of the resolved leaf paths
+%\item For the min-max problem, the value is $w_0+\sum_{w_v\le w_m}w_v$, where $w_m$ is the median.
+%\end{enumerate}
+%\item Repeat:
+%\begin{enumerate}
+%\item Select the weighted median $\lambda_m$ from $L$, perform feasibility testing, and adjust $\lambda_1$ or $\lambda_2$
+%\item Glue and clean adjacent subpaths which are resolved
+%\item Select the weighted median $\lambda_m$ from $L_2$, perform feasibility testing, and adjust $\lambda_1$ or $\lambda_2$
+%\item Cut or merge the appropriate leaf subpaths and insert the new value into $L_2$ for future rounds of feasibility testing
+%\item If min-max and at most leaf subpath remains for each vertex, then handle using furry subpaths
+%\end{enumerate}
+%\item TODO: Argue the feasibility testing as a function of remaining weight is fast enough!
+%\end{enumerate}
+%
+%\newpage
+%\section{Algorithm}
+%Given tree $T$ with root vertex $r$, label each vertex with the distance from $r$. Partition the tree into subpaths by taking subpaths vertices all have degree two, except possibly the endpoints of the subpaths. Furthermore, take the lengths the largest possible power of two, starting from the root vertex and proceeding downward throughout the tree.
+%\vskip 0.2in\noindent
+%As in the path partition problem, weight each subpath $4n^4$, where $n$ is the number of vertices in the subpaht, and their corresponding matrices. Insert the representatives of the matrices into a selection list $L$. Repeatedly split each matrix and insert the representatives of the split matrices with double the weight of those of the previous matrix.
+%\vskip 0.2in\noindent
+%If at any point a vertex contains only one unresolved leaf subpath as the algorithm proceeds, let $w_0$ be the weight of the vertex, let $w_1, w_2,\ldots, w_i$ be the remaining weights in the resolved subpaths, and let $w_m$ be the median. For the max-min parameteric search, insert $w_m$ into a selection list $L_2$ with weight $n$. For the min-max parametric search, insert into $L_2$ the value
+%\[w_0+\sum_{w_k\le w_m}w_k\]
+%with weight $i$.
+%\vskip 0.2in\noindent
+%Repeatedly select values from $L$ and $L_2$ for feasibility testing. First select and test the weighted median value from $L$ and change $\lambda_1$ or $\lambda_2$ accordingly. As vertices in subpaths are updated, we combine adjacent subpaths if both subpaths are cleaned and glued. Next, select and test the weighted median value $T$ from $L_2$ and again change $\lambda_1$ or $\lambda_2$ accordingly. Suppose $w_1, w_2,\ldots, w_n$ are the remaining weights in the resolved subpaths of the vertex from where $T$ is selected, with $w_m$ the median. In the max-min parametric search,
+%\vskip 0.2in\noindent
+%\texttt{
+%if $T\le\lambda$: (feasible, at least $k$ cuts)\newline
+%\indent for each child $c$ such that $w_c<T$:\newline
+%\indent\indent merge $c$ with the parent vertex\newline
+%\indent\indent add $w_c$ to the weight of the parent vertex\newline
+%\indent$median\_weight=0$\newline
+%\indent for each child $c$ such that $w_c\ge T$:\newline
+%\indent\indent $median\_weight=median\_weight+1$\newline
+%\indent set $w_m$ as the median of the weights $w_c$ with $w_c\ge T$\newline
+%\indent insert $w_m$ into $L_2$ with weight $median\_weight$
+%}
+%\vskip 0.2in\noindent
+%\texttt{
+%if $T>\lambda$: (infeasible, less than $k$ cuts)\newline
+%\indent for each child $c$ such that $w_c>T$:\newline
+%\indent\indent cut $c$ from the parent vertex unless $w_c$\newline
+%\indent\indent increment the value of $numcuts$ for the parent vertex\newline
+%\indent$median\_weight=0$\newline
+%\indent for each child $c$ such that $w_c\le T$:\newline
+%\indent\indent $median\_weight=median\_weight+1$\newline
+%\indent set $w_m$ as the median of the weights $w_c$ with $w_c\le T$\newline
+%\indent insert $w_m$ into $L_2$ with weight $median\_weight$
+%}
+%
+%
+%\vskip 0.2in\noindent
+%For the min-max parametric search problem:
+%\vskip 0.2in\noindent
+%\texttt{
+%if $T<\lambda$: (infeasible, more than $k$ cuts)\newline
+%\indent if only one unresolved child remains:\newline
+%\indent\indent furry\newline
+%\indent else:\newline
+%\indent\indent for each child $c$ with $w_c<T$ except the smallest:\newline
+%\indent\indent\indent merge $c$ with the parent vertex\newline
+%\indent\indent\indent add $w_c$ to the weight of the parent vertex\newline
+%\indent\indent$median\_weight=0$\newline
+%\indent\indent for each child $c$ such that $w_c\ge T$:\newline
+%\indent\indent\indent $median\_weight=median\_weight+1$\newline
+%\indent\indent set $w_m$ as the median of the weights $w_c$ with $w_c\ge T$\newline
+%\indent\indent insert $w_m$ into $L_2$ with weight $median\_weight$
+%}
+%
+%\vskip 0.2in\noindent
+%\texttt{
+%if $T\ge\lambda$: (feasible, no more than $k$ cuts)\newline
+%\indent for each child $c$ such that $w_c>T$:\newline
+%\indent\indent cut $c$ from the parent vertex\newline
+%\indent\indent increment the value of $numcuts$ for the parent vertex\newline
+%\indent$median\_weight=0$\newline
+%\indent let $w_0$ be the weight of the parent vertex\newline
+%\indent for each child $c$ such that $w_c\le T$:\newline
+%\indent\indent $median\_weight=median\_weight+1$\newline
+%\indent set $w_m$ as the median of the weights $w_c$ with $w_c\le T$\newline
+%\indent insert $w_0+\sum_{w_c\le w_m}w_c$ into $L_2$ with weight $median\_weight$
+%}
+%
+%
+%\newpage\noindent
+%\textbf{Theorem 3.4}: Algorithm $PATH1$ solves the max-min $k$-partitioning problem on a path of $n$ vertices in $O(n)$ time.
+%\newline
+%\textbf{Proof of Correctness}: Arrays $next$ and $ncut$, indexed by vertices on the path, is the key difference between $PATH0$ and $PATH1$. Feasibility test $FTEST1$ requires $next(a)$ to point to a further vertex, $b$, in the subpath, such that $ncut(a)$ is the number of cuts between $a$ and $b$. Enforcing this requirement, arrays $next$ and $ncut$ are updated by two subroutines of $PATH1$.
+%\vskip 0.2in\noindent
+%The first is $glue\_paths$. When $small(M)\ge\lambda_2$ or $large(M)\le\lambda_1$, certain vertices on the subpaths need no longer be inspected, so $glue\_paths$ combines two adjacent subpaths of equal length by updating the $next$ and $ncut$ values on the subpaths. The gluing and updating is repeated until no longer possible.
+%\vskip 0.2in\noindent
+%The second subroutine is $compress\_next\_path$, which is called after \\$search\_next\_path(a,b)$ in $FTEST1$. Procedure $search\_next\_path(a,b)$ determines $(v, sumcut)$, where $v$ is the location of the final cut before $b$ and $sumcut$ is the number of cuts between $a$ and $v$. The values of $next$ and $ncut$ for vertices between $a$ and $v$ are then updated.
+%\vskip 0.2in\noindent
+%The correctness of $FTEST1$ follows, as $numcut$ is incremented once for each subpath whose weight exceeds $\lambda$, or by $sumcut$ for each compressed subpath with the corresponding number of cuts.
+%\vskip 0.2in\noindent
+%Correctness of $PATH1$ follows from the correctness of $FTEST1$, from the fact that all possible candidates for $\lambda^*$ are included in $\mathcal{M}$, and from the fact that each value discarded is either at most $\lambda_1$ or at least $\lambda_2$.
+%
+%
+%\newpage
+%\noindent
+%\textbf{Lemma 3.3 cont.}: The time for inserting values into $R$ and performing the selections is $O(n)$.
+%\newline
+%\textbf{Proof}:
+%We give an accounting argument. Charge $2$ credits for each value inserted into $R$. As $R$ changes, we maintain the invariant that the number of credits is twice the size of $R$, as $R$ changes. When $R$ has $k$ elements, a selection takes $O(k)$ time, paid for by $k$ credits, leaving $k$ credits still available. Then, $k/2$ elements are removed from $R$, so that the invariant is maintained. Since $n$ elements are inserted into $R$ during the whole of $PATH1$, the time for forming $R$ and performing selections is $O(n)$.
+%
+%
+%\newpage
+%\noindent
+%\textbf{Lemma 3.3 cont.}: The number of submatrices inserted into $\mathcal{M}$ is $O(n)$.
+%\newline
+%\textbf{Proof}:
+%It remains to count the number of submatrices inserted into $\mathcal{M}$. Initially $2n-1$ submatrices are inserted into $\mathcal{M}$. For $j=1,2,\ldots,\log n-1$, consider all submatrices of size $2^j\times2^j$ that are at some point in $\mathcal{M}$. A matrix that is split must have its smallest value at most $\lambda_1$ and its largest value at least $\lambda_2$. However, $M_{i,j}>M_{i+k,j-k}$ for $k>0$, since the path represented by $M_{i+k,j-k}$ is a subpath of the path represented by $M_{i,j}$. Hence, for any submatrix of size $2^j\times 2^j$ which is split, at most one submatrix can be split in each diagonal extending upwards from left to right. There are fewer than $2n$ diagonals, so there will be fewer than $2(n/2^j)$ submatrices that are split. Thus the number resulting from quartering is less than $8(n/2^j)$. Summing over all $j$ gives $O(n)$ submatrices in $\mathcal{M}$ resulting from quartering.
+%
+%
+%\newpage
+%\noindent
+%\textbf{Lemma:} A graph of $n$ vertices contains at most $\lfloor{\frac{n}{k}\rfloor}$ disjoint paths of length $k$ or greater.
+%\vskip 0.2in\noindent
+%\textbf{Proof:} Suppose, by way of contradiction, graph $G$ contains $m$ disjoint paths, each containing at least $k$ vertices, where $m>\lfloor{\frac{n}{k}\rfloor}$. Then $G$ has at least $m\cdot k$ vertices. But since $m>\lfloor{\frac{n}{k}\rfloor}$, then $G$ contains more than $n$ vertices, which is a contradiction. Thus, a graph of $n$ vertices contains at most $\lfloor{\frac{n}{k}\rfloor}$ disjoint paths of length $k$ or greater.
+%
+
+
+
+
+\end{spacing}
+\end{document}

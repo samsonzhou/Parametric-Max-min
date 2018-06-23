@@ -1,0 +1,70 @@
+\section{Introduction}
+
+Parametric search is a powerful technique for solving various
+optimization problems
+\cite{AP,C1,C2,CSSS,FJ1,FJ2,Gu,M,R,S,Z}.
+To solve a given problem by parametric search, one must find a threshold value, namely a largest (or smallest) value
+that passes a certain feasibility test.
+In general, we must identify explicitly or implicitly a set of candidate values, and search the set, 
+choosing one value at a time upon which to test feasibility.
+As a result of the test, we discard from further consideration various values in the set.
+Eventually, the search will converge on the optimal value.
+ 
+In \cite{M}, Megiddo emphasized the role that
+parallel algorithms can play in the implementation of such
+a technique.
+In \cite{C2}, Cole improved the time bounds for a number of problems
+addressed in \cite{M},
+abstracting two techniques upon which parametric search can be based:
+sorting and performing independent binary searches.
+Despite the clever ideas elaborated in these papers,
+none of the algorithms presented in \cite{M, C2} 
+is known to be optimal.
+In fact, rarely have algorithms for parametric search problems
+been shown to be optimal.
+(For one that is optimal, see \cite{CSSS}.)
+In at least some cases, the time required for feasibility testing
+matches known lower bounds for the parametric search problem.
+But in the worst case, $\Omega (\log n)$ values must be tested for feasibility, where $n$ is the size of the input.
+Is this extra factor of at least $\log n$ necessary?
+For several parametric search problems on paths and trees,
+we show that a polylogarithmic penalty in the running time can be avoided,
+and give linear-time (and hence optimal) algorithms for these problems.
+
+We consider the max-min tree $k$-partitioning problem \cite{PS}.
+Let $T$ be a tree with $n$ vertices and a nonnegative weight associated with each vertex. 
+Let $k < n$ be a given positive integer.
+The problem is to delete $k$ edges in the tree so as to maximize the weight of the lightest of the resulting subtrees.
+Perl and Schach introduced an algorithm that runs in $O(k^2 rd(T)+kn)$ time, where $rd(T)$ is the radius of the tree \cite{PS}.
+Megiddo and Cole first considered the special case in which the tree is a path, and gave $O(n (\log n)^2)$-time and $O(n \log n)$-time algorithms, resp., for this case.\footnote{All logarithms are to the base 2.}
+(Megiddo noted that an $O(n \log n)$-time algorithm is possible, using ideas from \cite{FJ1}.)
+For the problem on a tree, Megiddo presented an $O(n( \log n)^3)$-time algorithm \cite{M}, and Cole presented an $O(n( \log n)^2)$-time algorithm \cite{C2}. 
+The algorithm we present here runs in $O(n)$ time, which is clearly optimal.
+
+A closely related problem is the min-max path $k$-partitioning problem \cite{BPS},  for which we must delete $k$ edges in the path so as to minimize the weight of the heaviest of the resulting subpaths. 
+Our techniques yield linear-time algorithms for both versions of path-partitioning  and for max-min tree $k$-partitioning problem. Our approach is less convoluted than that in \cite{FTR, F1}, and thus its analysis should be more amenable to independent confirmation and publication. 
+We believe that this paper provides for the full acknowledgement of linear time  algorithms for these particular problems.
+
+Our results are a contribution to parametric search in several ways
+beyond merely producing optimal algorithms for path and tree partitioning.  
+In contrast to \cite{F1}, we introduce synthetic weights on candidate values 
+or groups of candidate values from a certain implicit matrix. 
+We use weighted selection to resolve the values representing many shorter paths before the values for longer paths, enabling future feasibility tests to run faster. 
+We also use unweighted selection to reduce the size of the set of candidate values so that the time for selecting 
+test values does not become an obstacle to achieving linear time. 
+
+Our parametric search on trees reduces feasibility test time across subpaths, while simultaneously also pruning paths that
+have no paths that branch off of them. To demonstrate progress, we identify an effective measure of current problem size. 
+Surprisingly, the number of vertices remaining in the tree seems not to be so helpful, as is also the case for the number of candidate values. 
+Instead, we show that the time to perform a feasibility test actually is effective. 
+Our analysis for tree partitioning captures the total progress from the beginning of the algorithm, not necessarily between consecutive rounds, as was the case for the path-partitioning problem. 
+Thus it seems necessary to have a dual-pronged strategy to simultaneously compress the search structure of paths and also prune paths that end with a leaf.
+
+We organize our paper as follows. 
+In Section 2 we discuss features of parametric search, and lay the foundation for the optimal algorithms that we describe in subsequent sections.
+In Section 3 we present our approach for solving both
+the min-max and the max-min partitioning problem on a path. 
+In Section 4 we build on the results in Section 3 and
+present our approach for optimally solving the max-min partitioning problem on a tree.
+\bigskip
+
